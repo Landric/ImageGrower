@@ -9,7 +9,7 @@ TARGET_WIDTH, TARGET_HEIGHT = TARGET.size
 
 STARTING_POPULATION = 100
 PERCENTAGE_BEST = 0.1
-NUMBER_OF_CHILDREN = 1
+NUMBER_OF_CHILDREN = 10
 
 MUTATION_CHANCE = 0.1
 
@@ -37,23 +37,13 @@ def fitness(target, population):
         fitness_dict[id] = numpy.sum(right)
 
     best = sorted(fitness_dict.items(), key=operator.itemgetter(1), reverse=True)[:int(PERCENTAGE_BEST * STARTING_POPULATION)]
-    print best
     return [population[i[0]] for i in best]
 
 
 def breed(best):
-    print "breed"
-    # for every combination of pairs, breed 10 new pairs
     new_pop = []
 
-    def all_pairs(lst):
-        for p in itertools.permutations(lst):
-            i = iter(p)
-            yield zip(i, i)
-
-    print best
-    print all_pairs(best)
-    for image1, image2 in all_pairs(best):
+    for image1, image2 in itertools.permutations(best, 2):
         for child in range(NUMBER_OF_CHILDREN):
             new_pop.append(breed_pair(image1, image2))
 
@@ -61,6 +51,8 @@ def breed(best):
             #over all the others, but it'll do for now until we get some output
             if len(new_pop) == STARTING_POPULATION:
                 return new_pop
+
+    raise Exception("Not enough population!")
 
 
 def breed_pair(image1, image2):
@@ -85,8 +77,9 @@ if __name__ == "__main__":
     population = [get_random_image() for x in range(STARTING_POPULATION)]
 
     # while(fitness(population[0]) < 0.9):
-    for x in range(REPETITIONS):
+    for i in range(REPETITIONS):
+        print "Iteration {0}".format(i)
         population = breed(fitness(TARGET, population))
-        fitness(population)[0].show()
+        fitness(TARGET, population)[0].show()
 
     population[0].show()
