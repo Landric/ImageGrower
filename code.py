@@ -1,15 +1,19 @@
 from PIL import Image
-from random import randint
+from random import random
 import numpy
 import itertools
+import operator
 
 TARGET = Image.open("image.png").convert("1")
 TARGET_WIDTH, TARGET_HEIGHT = TARGET.size
 
-STARTING_POPULATION = 10
+STARTING_POPULATION = 100
+PERCENTAGE_BEST = 0.1
+NUMBER_OF_CHILDREN = 1
 
-MUTATION_CHANCE = 10
-STEPS = 2
+MUTATION_CHANCE = 0.1
+
+REPETITIONS = 2
 
 
 def get_random_image():
@@ -25,18 +29,16 @@ def get_random_image():
 
 
 def fitness(target, population):
-    print "fitness"
     fitness_dict = {}
 
     # return best 10 from pop
-    for i, image in enumerate(population):
+    for id, image in enumerate(population):
         right = numpy.logical_and(numpy.array(list(target.getdata())), numpy.array(list(image.getdata())))
-        fitness_dict[i] = numpy.sum(right)
+        fitness_dict[id] = numpy.sum(right)
 
-    print fitness_dict.keys()
-    best = sorted(fitness_dict.items(), key=fitness_dict.get, reverse=True)[:10]
+    best = sorted(fitness_dict.items(), key=operator.itemgetter(1), reverse=True)[:int(PERCENTAGE_BEST * STARTING_POPULATION)]
     print best
-    return [population[i] for i in best]
+    return [population[i[0]] for i in best]
 
 
 def breed(best):
@@ -51,24 +53,29 @@ def breed(best):
 
     print best
     print all_pairs(best)
-    for i, j in all_pairs(best):
-        for y in range(1):
-            new_pop.append(breed_pair(i, j))
+    for image1, image2 in all_pairs(best):
+        for child in range(NUMBER_OF_CHILDREN):
+            new_pop.append(breed_pair(image1, image2))
 
-    return new_pop
+            #Lazy way of ensuring constant population size - this might lead to the algorithm favouring one "parent"
+            #over all the others, but it'll do for now until we get some output
+            if len(new_pop) == STARTING_POPULATION:
+                return new_pop
 
 
 def breed_pair(image1, image2):
-    # take half of one, half of other, introduce some randomness
     image1 = list(image1.getdata())
     image2 = list(image2.getdata())
     image3 = Image.new("1", (TARGET_WIDTH, TARGET_HEIGHT))
 
+    #Currently takes top half of one image and bottom half of the other
+    #In future, it should take a random selection of pixels (which can be extended to give the option of a random
+    #amount too)
     child = image1[len(image1) / 2:] + image2[:len(image2) / 2]
 
     #10% chance of mutating every pixel
     for i, pixel in enumerate(child):
-        if randint(0, 100) < MUTATION_CHANCE:
+        if random() < MUTATION_CHANCE:
             child[i] = 0 if pixel else 1
 
     return image3.putdata(child)
@@ -78,7 +85,7 @@ if __name__ == "__main__":
     population = [get_random_image() for x in range(STARTING_POPULATION)]
 
     # while(fitness(population[0]) < 0.9):
-    for x in range(STEPS):
+    for x in range(REPETITIONS):
         population = breed(fitness(TARGET, population))
         fitness(population)[0].show()
 
