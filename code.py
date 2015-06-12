@@ -36,7 +36,8 @@ def fitness(target, population):
         right = numpy.logical_and(numpy.array(list(target.getdata())), numpy.array(list(image.getdata())))
         fitness_dict[id] = numpy.sum(right)
 
-    best = sorted(fitness_dict.items(), key=operator.itemgetter(1), reverse=True)[:int(PERCENTAGE_BEST * STARTING_POPULATION)]
+    best = sorted(fitness_dict.items(), key=operator.itemgetter(1), reverse=True)[:int(PERCENTAGE_BEST * len(population))]
+
     return [population[i[0]] for i in best]
 
 
@@ -70,16 +71,18 @@ def breed_pair(image1, image2):
         if random() < MUTATION_CHANCE:
             child[i] = 0 if pixel else 1
 
-    return image3.putdata(child)
+    image3.putdata(child)
+    return image3
 
 
 if __name__ == "__main__":
     population = [get_random_image() for x in range(STARTING_POPULATION)]
 
+    #Repetitions could be replaced with a loop that checks the fitness of the best image, i.e.:
     # while(fitness(population[0]) < 0.9):
     for i in range(REPETITIONS):
         print "Iteration {0}".format(i)
         population = breed(fitness(TARGET, population))
-        fitness(TARGET, population)[0].show()
+        #fitness(TARGET, population)[0].show()
 
     population[0].show()
