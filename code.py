@@ -3,66 +3,73 @@ from random import randint
 import numpy
 import itertools
 
+TARGET = Image.open("image.png").convert("1")
+TARGET_WIDTH, TARGET_HEIGHT = TARGET.size
+
 STEPS = 2
 
 
-def getRandomImage():
-	array = numpy.random.rand(399, 401)
-	
-	for x in numpy.nditer(array, op_flags=['readwrite']):
-		if x > 0.5:
-			x[...] = 1
-		else:
-			x[...] = 0
+def get_random_image():
+    array = numpy.random.rand(TARGET_WIDTH, TARGET_HEIGHT)
 
-	return Image.fromarray(array)
+    for x in numpy.nditer(array, op_flags=['readwrite']):
+        if x > 0.5:
+            x[...] = 1
+        else:
+            x[...] = 0
+
+    return Image.fromarray(array)
+
 
 def fitness(target, population):
-	print "fitness"
-	fitness_dict = {}
+    print "fitness"
+    fitness_dict = {}
 
-	#return best 10 from pop
-	for i, im in enumerate(population):
-		right = numpy.logical_and(numpy.array(list(target.getdata())), numpy.array(list(im.getdata())))
-		fitness_dict[i] = numpy.sum(right)
+    # return best 10 from pop
+    for i, image in enumerate(population):
+        right = numpy.logical_and(numpy.array(list(target.getdata())), numpy.array(list(image.getdata())))
+        fitness_dict[i] = numpy.sum(right)
 
-	print fitness_dict.keys()
-	best = sorted(fitness_dict.items(), key=fitness_dict.get)[:10]
-	print best
-	return [population[i] for i in best]
+    print fitness_dict.keys()
+    best = sorted(fitness_dict.items(), key=fitness_dict.get, reverse=True)[:10]
+    print best
+    return [population[i] for i in best]
+
 
 def breed(best):
-	print "breed"
-	#for every combination of pairs, breed 10 new pairs
-	new_pop = []
+    print "breed"
+    # for every combination of pairs, breed 10 new pairs
+    new_pop = []
 
-	def all_pairs(lst):
-	    for p in itertools.permutations(lst):
-	        i = iter(p)
-	        yield zip(i,i)
+    def all_pairs(lst):
+        for p in itertools.permutations(lst):
+            i = iter(p)
+            yield zip(i, i)
 
-	print best
-	print all_pairs(best)
-	for i, j in all_pairs(best):
-		for y in range(1):
-			new_pop.append(breed_pair(i, j))
+    print best
+    print all_pairs(best)
+    for i, j in all_pairs(best):
+        for y in range(1):
+            new_pop.append(breed_pair(i, j))
 
-	return new_pop
+    return new_pop
+
 
 def breed_pair(image1, image2):
-	#take half of one, half of other, introduce some randomness
-		image1 = list(image1.getdata())
-		image2 = list(image2.getdata())
-		image3 = Image.new("L", (401, 399))
+    # take half of one, half of other, introduce some randomness
+    image1 = list(image1.getdata())
+    image2 = list(image2.getdata())
+    image3 = Image.new("1", (TARGET_WIDTH, TARGET_HEIGHT))
 
-		return image3.putdata(image1[len(image1)/2:] + image2[:len(image2)/2])
+    return image3.putdata(image1[len(image1) / 2:] + image2[:len(image2) / 2])
+
 
 if __name__ == "__main__":
-	target = Image.open("image.png").convert("L")
-	population = [getRandomImage() for x in range(100)]
+    population = [get_random_image() for x in range(100)]
 
-	for x in range(STEPS):
-		population = breed(fitness(target, population))
+    # while(fitness(population[0]) < 0.9):
+    for x in range(STEPS):
+        population = breed(fitness(TARGET, population))
+    fitness(population)[9].show()
 
-
-	population[0].show()
+    population[0].show()
