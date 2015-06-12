@@ -6,6 +6,9 @@ import itertools
 TARGET = Image.open("image.png").convert("1")
 TARGET_WIDTH, TARGET_HEIGHT = TARGET.size
 
+STARTING_POPULATION = 10
+
+MUTATION_CHANCE = 10
 STEPS = 2
 
 
@@ -61,15 +64,22 @@ def breed_pair(image1, image2):
     image2 = list(image2.getdata())
     image3 = Image.new("1", (TARGET_WIDTH, TARGET_HEIGHT))
 
-    return image3.putdata(image1[len(image1) / 2:] + image2[:len(image2) / 2])
+    child = image1[len(image1) / 2:] + image2[:len(image2) / 2]
+
+    #10% chance of mutating every pixel
+    for i, pixel in enumerate(child):
+        if randint(0, 100) < MUTATION_CHANCE:
+            child[i] = 0 if pixel else 1
+
+    return image3.putdata(child)
 
 
 if __name__ == "__main__":
-    population = [get_random_image() for x in range(100)]
+    population = [get_random_image() for x in range(STARTING_POPULATION)]
 
     # while(fitness(population[0]) < 0.9):
     for x in range(STEPS):
         population = breed(fitness(TARGET, population))
-    fitness(population)[9].show()
+        fitness(population)[0].show()
 
     population[0].show()
